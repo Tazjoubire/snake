@@ -1,14 +1,41 @@
+body {
+	overflow: hidden;
+}
 #board {
 	/*display: block;*/
-	border: 5px solid #a3a3a3;
-	background-color: #f3f3f3;
+	border: 5px solid DimGray;
+	background-color: White;
 	margin-left: auto;
 	margin-right: auto;
+	border-top-right-radius: 5px;
+	border-top-left-radius: 5px;
 }
-#score, .score{
-	text-align: center;
-	font-size: 68px;
-	color: Green;
+#panel {
+	border: 0 5px 5px 5px;
+	border-style: solid;
+	border-color: DimGray;
+	background-color: DimGray;
+	color: White;
+	font-weight: bold;
+	border-bottom-right-radius: 5px;
+	border-bottom-left-radius: 5px;
+	padding: 2px;
+}
+
+@media (min-width: 768px) {
+  .panel-text-size {
+	font-size: 12px;
+  }
+}
+@media (min-width: 992px) {
+  .panel-text-size {
+	font-size: 24px;
+  }
+}
+@media (min-width: 1200px) {
+  .panel-text-size {
+	font-size: 48px;
+  }
 }
 
 .text-center{

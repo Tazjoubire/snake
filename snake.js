@@ -13,17 +13,18 @@
 				snakeHeadColor: "DarkGreen",
 				snakeFoodColor: "LightGreen",
 				snakeDefaultSize: 5,
-				debug: true,
+				canvasType: "Full", // Square
+				debug: false,
 				refreshTime: 100 // Insert a value in milliseconds.
 			};
 		}
 
 		var gameStatus = "Ready";
-		var snakeSize;
-		var matrixSize;
-		var canvas;
-		var context;
-		var timer;
+		var snakeSize = 0;
+		var matrixSize = {};
+		var canvas = "";
+		var context = "";
+		var timer = 0;
 		var points = [];
 		var key = 100;
 		var lastKey = 100;
@@ -31,18 +32,24 @@
 		var food = {};
 		var foodSize = 1;
 		var theSnakeGetsFatter = false;
-		var placard;
+		var placard = "";
+		var mousePoint = {};
 
 		window.onload = function(){
 			canvas = document.getElementById("board");
 			placard = document.getElementById("score");
 			
-			drawCanvas();
+			switch(op.canvasType){
+				case "Full": {drawFullCanvas();}break;
+				default: {drawSquareCanvas();}break;
+			}
+			
+			addMouseFeature();
 			
 			for (var i = 0; i < op.snakeDefaultSize; i++) {
 				points.push({
-					x: Math.floor( matrixSize / 2 ) * snakeSize - ( i * snakeSize ), 
-					y: Math.floor( matrixSize / 2 ) * snakeSize
+					x: Math.floor( matrixSize.x / 2 ) * snakeSize - ( i * snakeSize ), 
+					y: Math.floor( matrixSize.y / 2 ) * snakeSize
 				});
 			}
 
@@ -66,8 +73,8 @@
 			 * We start to think that all points are empty. But is not true, at this point we already have
 			 * created the snake, and the snake's points are not empty.
 			 */
-			for (var i = 0; i < matrixSize; i++) {
-				for (var j = 0; j < matrixSize; j++) {
+			for (var i = 0; i < matrixSize.x; i++) {
+				for (var j = 0; j < matrixSize.y; j++) {
 		    		emptyMatrixPoints.push({ 
 		    							x: (i * snakeSize), 
 		    							y: (j * snakeSize)
@@ -84,19 +91,19 @@
 				 * We use an array to manage the empty points, so next formula transform a matrix point 
 				 * in a array point. Thus we can remove the fill points from de enpty matrix points.
 				 */
-				var index = (((points[i].y / snakeSize) * matrixSize) + (points[i].x / snakeSize));
+				var index = (((points[i].y / snakeSize) * matrixSize.x) + (points[i].x / snakeSize));
 				emptyMatrixPoints.splice(index,1);
 			}
 			log(emptyMatrixPoints);
 		}
 
 		function removeEmptyMatrixPoints(point) {
-			var index = (((point.y / snakeSize) * matrixSize) + (point.x / snakeSize))
+			var index = (((point.y / snakeSize) * matrixSize.x) + (point.x / snakeSize))
 			emptyMatrixPoints.splice(index,1);
 		}
 
 		function addEmptyMatrixPoints(point) {
-			var index = (((point.y / snakeSize) * matrixSize) + (point.x / snakeSize))
+			var index = (((point.y / snakeSize) * matrixSize.x) + (point.x / snakeSize))
 			emptyMatrixPoints.splice(index,0,point);
 		}
 		
@@ -139,6 +146,7 @@
 				|| 	( canvas.height - snakeSize) < points[0].y  
 				|| 	( 0 > points[0].y ) )
 			{
+				gameStatus = "Lost";
 				clearInterval(timer);
 				console.log("Loser");
 				return;
@@ -202,7 +210,7 @@
 		/**
 		 * We draw the canvas and the snake with windows adujst
 		 */
-		function drawCanvas(){
+		function drawSquareCanvas(){
 			// Get the minimum value for our canvas based on window size.
 			var canvasLength = window.innerWidth;
 			if( window.innerWidth > window.innerHeight ){
@@ -225,16 +233,94 @@
 			if(matrixSize % 2 == 0){
 				matrixSize--;
 			}
-			canvasLength = snakeSize * matrixSize;
+			var panelHeight = document.getElementById("panel").clientHeight;
+			canvasLength = ( snakeSize * matrixSize ) - ( Math.ceil(panelHeight * snakeSize ) * snakeSize );
+
+			matrixSize = {
+				x: matrixSize,
+				y: matrixSize
+			}
 
 			// Draw the canvas.
-			canvas.height = canvasLength;
 			canvas.width = canvasLength;
+			canvas.height = canvasLength;
 			context = canvas.getContext("2d");
+			document.getElementById("panel").style.width = context.canvas.clientWidth + ( context.canvas.clientLeft * 2 ) + "px";
+		}
+
+		function drawFullCanvas(){
+			// Get the minimum value for our canvas based on window size.
+			var canvasWidth = window.innerWidth;
+			var canvasHeight = window.innerHeight;
+
+			// The size of the snake is going to be 5% of our canvas minimum size.
+			snakeSize = Math.floor( canvasHeight * 0.05 );
+
+			// We want a size with a odd value, otherwise we get the odd value down.
+			if ( ( snakeSize % 2 ) != 0 ){
+				snakeSize--;
+			}
+
+			// This is de raius to draw the food to feed the snake. Is going to be used on drawTheFood().
+			foodSize = ( snakeSize / 2 );
+
+			// To get a canvas with exactly x times snakeSize, for the snake fit perfectly inside tha canvas.
+			var matrixSizeX = Math.floor( canvasWidth / snakeSize );
+			if(matrixSizeX % 2 == 0){
+				matrixSizeX--;
+			}
+			canvasWidth = snakeSize * matrixSizeX;
+
+			var matrixSizeY = Math.floor( canvasHeight / snakeSize );
+			if(matrixSizeY % 2 == 0){
+				matrixSizeY--;
+			}
+			var panelHeight = getPanelSize();
+			canvasHeight = ( snakeSize * matrixSizeY ) - panelHeight;
+
+			matrixSize = {
+				x: matrixSizeX,
+				y: matrixSizeY - (panelHeight/snakeSize)
+			}
+
+			// Draw the canvas.
+			canvas.width = canvasWidth; //canvasLength;
+			canvas.height = canvasHeight; //canvasLength;
+			context = canvas.getContext("2d");
+			document.getElementById("panel").style.width = context.canvas.clientWidth + ( context.canvas.clientLeft * 2 ) + "px";
+		}
+
+
+		function getPanelSize(){
+			return Math.ceil( document.getElementById("panel").clientHeight / snakeSize ) * snakeSize;
 		}
 
 		function start() {
+			gameStatus = "Running";
 			timer = setInterval(drawSnake, op.refreshTime);
+		}
+
+		function restart() {
+			gameStatus = "Ready";
+			snakeSize = 0;
+			matrixSize = 0;
+			canvas = "";
+			context = "";
+			timer = 0;
+			points = [];
+			key = 100;
+			lastKey = 100;
+			emptyMatrixPoints = [];
+			food = {};
+			foodSize = 1;
+			theSnakeGetsFatter = false;
+			placard = "";
+			window.onload();
+		}
+
+		function pause() {
+			gameStatus = "Paused";
+			clearInterval(timer);
 		}
 
 		//       ---
@@ -253,11 +339,57 @@
 				key = e.keyCode;
 			}
 
+			//TODO This not work when we put the game paused.
+			// Check if we can start the game.
 			if( (gameStatus === "Ready" || gameStatus === "Paused") && ["s", "d", "w"].indexOf(e.key) > -1 ){
-				gameStatus = "Running";
 				start();
 			}
+
+			if ( (gameStatus === "Lost" || gameStatus === "Paused") && e.key === "r") {
+				restart();
+			}
+
+			if ( gameStatus === "Running" && e.key === "p") {
+				pause();
+			}
+
 		}
+
+
+		function addMouseFeature() {
+			var canvaPos = canvas.getBoundingClientRect();
+	    	canvas.addEventListener('mousedown', function(event) {
+		        var mousePositionX = Math.floor(event.clientX - canvaPos.left);
+				var mousePositionY = Math.floor(event.clientY - canvaPos.top);
+
+				// We take the snake position as a reference.
+				if ( ( lastKey === 115 || lastKey === 119 ) ) {
+					if ( mousePositionX < points[0].x) {
+						key = "a".charCodeAt(); //a
+					} else {
+						key = "d".charCodeAt(); //d
+					}
+				} else if( ( lastKey === 97 || lastKey === 100 ) ){
+					if ( mousePositionY < points[0].y) {
+						key = "w".charCodeAt(); //w
+					} else {
+						key = "s".charCodeAt(); //s
+					}
+				}
+
+				if( gameStatus === "Ready" || gameStatus === "Paused" ){
+					start();
+				}
+	    	}, false);
+	    }
+
+	    
+
+
+
+
+
+
 
 		function isEmpty(object){
 			for ( var k in object ) {
@@ -279,14 +411,7 @@
 				console.log("--------");
 			}
 		}
+
 		
+			
 	})(options);
-
-
-
-
-
-
-
-
-
