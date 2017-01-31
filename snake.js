@@ -6,6 +6,7 @@ var options = {};
 	
 	'use strict';
 
+	// options = options || {};
 	// null is equals to undefined
 	if ( op == null || isEmpty(op) ) {
 		op = {
@@ -15,20 +16,55 @@ var options = {};
 			snakeDefaultSize: 5,
 			canvasType: "Full", // Square
 			debug: false,
-			refreshTime: 100 // Insert a value in milliseconds.
+			refreshTime: 200 // Insert a value in milliseconds.
 		};
 	}
 
+	/**
+	 * The status of the game.
+	 *
+	 * @type string (Ready, Loser, Paused, Running)
+	 */
 	var gameStatus = "Ready";
+
+
+	/**
+	 * The snake is build by squares. This is the value of the square side.
+	 *
+	 * @type number
+	 */
 	var snakeSize = 0;
+
+
+	/**
+	 * The size of the game painel. This is meter in snake size. Canvas size in pixeis is equals to
+	 * matrix size times snake size.
+	 *
+	 * @type Object
+	 */
 	var matrixSize = {};
+
+
+	/**
+	 * This is a HTML Element where we will play.
+	 *
+	 * @type Element
+	 */
 	var canvas = "";
+
+
+	/**
+	 * 2D context where we have the canvas.
+	 *
+	 * @type Object
+	 */
 	var context = "";
 	var timer = 0;
 	var points = [];
 	var key = 100;
 	var lastKey = 100;
 	var emptyMatrixPoints = [];
+	var auxEmptyMatrixPoints = [];
 	var food = {};
 	var foodSize = 1;
 	var theSnakeGetsFatter = false;
@@ -62,49 +98,42 @@ var options = {};
 		//timer = setInterval(drawSnake, op.refreshTime);
 	};	
 
-	/**
-	 * We are going to use this function to calculate a empty point to put the snake's food.
-	 * We cant not put food at the points filled by the snake, she can bit us :).
-	 */
+	
+	// We are going to use this function to calculate a empty point to put the snake's food.
+	// We cant not put the food at the points filled by the snake. sShe can bit us :).
 	function getEmptyMatrixPoints(){
-		/**
-		 * Based on matrix size we are going to generate an array with all empty points.
-		 * Thus we can easly select a point to draw the food to the snake.
-		 * We start to think that all points are empty. But is not true, at this point we already have
-		 * created the snake, and the snake's points are not empty.
-		 */
-		for (var i = 0; i < matrixSize.x; i++) {
-			for (var j = 0; j < matrixSize.y; j++) {
-	    		emptyMatrixPoints.push({ 
-	    							x: (i * snakeSize), 
-	    							y: (j * snakeSize)
-	    						});
+		// Based on matrix size we are going to generate an array with all empty points.
+		// Thus we can easly select a point to draw the food to the snake.
+		// We start to think that all points are empty. But is not true, at this point we already have
+		// created the snake, and the snake's points are not empty.
+		for (var j = 0; j < matrixSize.y; j++) {
+			for (var i = 0; i < matrixSize.x; i++) {
+				emptyMatrixPoints.push({ 
+									x: (i * snakeSize), 
+									y: (j * snakeSize)
+								});
 			}
 		}
 
-		/**
-		 * We use this routine to remove the snake's points from the matrix. How this points are fill
-		 * by the snake they are not empty. Make sense :)
-		 */
-		for (var i = 0; i < points.length; i++) {
-			/**
-			 * We use an array to manage the empty points, so next formula transform a matrix point 
-			 * in a array point. Thus we can remove the fill points from de enpty matrix points.
-			 */
-			var index = (((points[i].y / snakeSize) * matrixSize.x) + (points[i].x / snakeSize));
-			emptyMatrixPoints.splice(index,1);
+		// We use this routine to remove the snake's points from the matrix. How this points are fill
+		// by the snake they are not empty. Make sense :)
+		for (var k = 0; k < points.length; k++) {
+			// We use an array to manage the empty points, so next formula transform a matrix point 
+			// in a array point. Thus we can remove the fill points from de enpty matrix points.
+			var index = (((points[k].y / snakeSize) * matrixSize.x) + (points[k].x / snakeSize));
+			auxEmptyMatrixPoints.splice(index,1);
 		}
 		log(emptyMatrixPoints);
 	}
 
 	function removeEmptyMatrixPoints(point) {
 		var index = (((point.y / snakeSize) * matrixSize.x) + (point.x / snakeSize))
-		emptyMatrixPoints.splice(index,1);
+		auxEmptyMatrixPoints.splice(index,1);
 	}
 
 	function addEmptyMatrixPoints(point) {
 		var index = (((point.y / snakeSize) * matrixSize.x) + (point.x / snakeSize))
-		emptyMatrixPoints.splice(index,0,point);
+		auxEmptyMatrixPoints.splice(index,0,point);
 	}
 	
 	function moveTheSnake() {
@@ -204,7 +233,7 @@ var options = {};
 	}
 
 	function getMoreFoodToTheSnake(){
-	    food = emptyMatrixPoints[Math.floor(Math.random()*(emptyMatrixPoints.length))];
+		food = emptyMatrixPoints[Math.floor(Math.random()*(emptyMatrixPoints.length))];
 	}
 
 	/**
@@ -254,7 +283,11 @@ var options = {};
 		var canvasHeight = window.innerHeight;
 
 		// The size of the snake is going to be 5% of our canvas minimum size.
-		snakeSize = Math.floor( canvasHeight * 0.05 );
+		snakeSize = Math.floor( canvasWidth * 0.05 );
+		if ( ( canvasWidth - canvasHeight ) > 0 ) {
+			snakeSize = Math.floor( canvasHeight * 0.05 );
+		}
+
 
 		// We want a size with a odd value, otherwise we get the odd value down.
 		if ( ( snakeSize % 2 ) != 0 ){
@@ -269,30 +302,49 @@ var options = {};
 		if(matrixSizeX % 2 == 0){
 			matrixSizeX--;
 		}
+
+		// Calculate normalized width
 		canvasWidth = snakeSize * matrixSizeX;
 
 		var matrixSizeY = Math.floor( canvasHeight / snakeSize );
 		if(matrixSizeY % 2 == 0){
 			matrixSizeY--;
 		}
-		var panelHeight = getPanelSize();
-		canvasHeight = ( snakeSize * matrixSizeY ) - panelHeight;
+
+		// Calculate normalized height
+		canvasHeight = ( snakeSize * matrixSizeY ) ;
 
 		matrixSize = {
 			x: matrixSizeX,
-			y: matrixSizeY - (panelHeight/snakeSize)
+			y: matrixSizeY 
+		}
+
+		// Get some space for the panel.
+		if ( ( window.innerHeight - canvasHeight ) < snakeSize ) {
+			matrixSize.y -= 2 ;
+			canvasHeight -= (snakeSize * 2);
 		}
 
 		// Draw the canvas.
 		canvas.width = canvasWidth; //canvasLength;
 		canvas.height = canvasHeight; //canvasLength;
 		context = canvas.getContext("2d");
-		document.getElementById("panel").style.width = context.canvas.clientWidth + ( context.canvas.clientLeft * 2 ) + "px";
-	}
 
+		//document.getElementById("panel").style.width = context.canvas.clientWidth + ( context.canvas.clientLeft * 2 ) + "px";
+		// Draw the score panel
+		var panel = document.getElementById("panel");
 
-	function getPanelSize(){
-		return Math.ceil( document.getElementById("panel").clientHeight / snakeSize ) * snakeSize;
+		// The width of the pane is the same of the canvas plus the border left and right.
+		panel.style.width = context.canvas.clientWidth + ( context.canvas.clientLeft * 2 ) + "px";
+		
+		// The height of the panel is equals to window height minus canvas height minus the border
+		// top and the border bottom.
+		panel.style.height = (window.innerHeight - canvasHeight) - ( context.canvas.clientTop * 2 ) + "px";
+		
+		// The paragraph inside the panel is going to have an height equals to 
+		// window height minus canvas height minus the border top and the border bottom minus
+		// panel border bottom.
+		panel.getElementsByTagName("p")[0].style.lineHeight = (window.innerHeight - canvasHeight) - ( context.canvas.clientTop * 3 ) + "px";
 	}
 
 	function start() {
@@ -356,11 +408,26 @@ var options = {};
 	}
 
 
+	// TODO: Add mousedown feature.
 	function addMouseFeature() {
+
 		var canvaPos = canvas.getBoundingClientRect();
-    	canvas.addEventListener('touchstart', function(event) {
-	        var mousePositionX = Math.floor(event.clientX - canvaPos.left);
-			var mousePositionY = Math.floor(event.clientY - canvaPos.top);
+		canvas.addEventListener('touchstart', function(event) {
+			var client = {};
+
+			switch( event.type ){
+				case "touchstart": {
+					client.x = event.changedTouches["0"].clientX;
+					client.y = event.changedTouches["0"].clientY;
+				} break;
+				default: {
+					client.x = event.clientX;
+					client.y = event.clientY;
+				} break;
+			}
+
+			var mousePositionX = Math.floor(client.x - canvaPos.left);
+			var mousePositionY = Math.floor(client.y - canvaPos.top);
 
 			// We take the snake position as a reference.
 			if ( ( lastKey === 115 || lastKey === 119 ) ) {
@@ -380,15 +447,12 @@ var options = {};
 			if( gameStatus === "Ready" || gameStatus === "Paused" ){
 				start();
 			}
-    	}, false);
-    }
+		}, false);
 
-    
-
-
-
-
-
+		canvas.addEventListener('touchend', function(event) {
+			event.preventDefault();
+		});
+	}
 
 
 	function isEmpty(object){

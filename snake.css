@@ -10,21 +10,29 @@ body {
 	border-top-right-radius: 5px;
 	border-top-left-radius: 5px;
 }
+#panel p {
+	margin: 0;
+}
 #panel {
-	border: 0 5px 5px 5px;
 	border-style: solid;
 	border-color: DimGray;
+	border-top: 0px;
+	border-bottom: 0px;
+	border-left: 5px;
+	border-right: 5px;
+	border-bottom-right-radius: 5px;
+	border-bottom-left-radius: 5px;
 	background-color: DimGray;
 	color: White;
 	font-weight: bold;
-	border-bottom-right-radius: 5px;
-	border-bottom-left-radius: 5px;
-	padding: 2px;
+	padding: 0px 5px 5px 5px;
+	margin-top: 0;
+	margin-bottom: 0;
 }
 
 @media (min-width: 768px) {
   .panel-text-size {
-	font-size: 12px;
+	font-size: 44px;
   }
 }
 @media (min-width: 992px) {
